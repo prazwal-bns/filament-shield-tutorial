@@ -1,0 +1,54 @@
+Laravel Filament:Shield Tutorial:
+
+- create a new laravel project
+composer require laravel/laravel filament-shield --prefer-dist
+
+- install filament and panel
+composer require filament/filament:"^3.2" -W
+php artisan filament:install --panels
+
+
+- require filament shield package
+composer require bezhansalleh/filament-shield
+
+- publish filament-config
+php artisan vendor:publish --tag="filament-shield-config"
+
+
+- add HasRoles trait inside User Model:
+use Spatie\Permission\Traits\HasRoles;
+ 
+class User extends Authenticatable
+{
+    use HasRoles;
+}
+
+
+- for setting up migration and other config files run:
+php artisan shield:setup
+
+
+- now install shield for your panel id,
+php artisan shield:install admin
+# Replace 'admin' with your panel ID
+
+- add this to your panelprovider
+->plugins([
+    \BezhanSalleh\FilamentShield\FilamentShieldPlugin::make(),
+])
+
+
+
+- for default or newly registerd users a certain role should be assigned for that implement Filament User and use HasPanelShield :
+class User extends Authenticatable implements FilamentUser
+    use HasFactory, Notifiable, HasRoles, HasPanelShield;
+
+
+
+php artisan shield:install admin
+
+- for generating a user with all priveleges
+art shield:super-admin
+
+- for generating policies for all models
+art shield:generate --all
