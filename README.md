@@ -1,66 +1,112 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Laravel Filament Shield Tutorial
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+## Introduction
+[Filament Shield](https://github.com/bezhanSalleh/filament-shield) is a package that provides role-based access control for Laravel Filament applications. This guide walks you through the installation and configuration of Filament Shield in a Laravel project.
 
-## About Laravel
+## Prerequisites
+- Laravel 10+
+- Filament Admin Panel
+- Composer
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Installation
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+### 1. Create a new Laravel project
+```sh
+composer create-project laravel/laravel my-project
+cd my-project
+```
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### 2. Install Filament and Panel
+```sh
+composer require filament/filament:"^3.2" -W
+php artisan filament:install --panels
+```
 
-## Learning Laravel
+### 3. Install Filament Shield
+```sh
+composer require bezhansalleh/filament-shield
+```
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### 4. Publish Filament Shield Configuration
+```sh
+php artisan vendor:publish --tag="filament-shield-config"
+```
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+### 5. Add HasRoles Trait to User Model
+Edit `app/Models/User.php` and add the `HasRoles` trait:
+```php
+use Spatie\Permission\Traits\HasRoles;
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+class User extends Authenticatable {
+    use HasRoles;
+}
+```
 
-## Laravel Sponsors
+### 6. Setup Filament Shield Migration and Config Files
+```sh
+php artisan shield:setup
+```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+### 7. Install Shield for Your Panel
+Replace `admin` with your actual panel ID:
+```sh
+php artisan shield:install admin
+```
 
-### Premium Partners
+### 8. Register Filament Shield Plugin
+In your Filament Panel Provider, add the following:
+```php
+->plugins([
+    \BezhanSalleh\FilamentShield\FilamentShieldPlugin::make(),
+])
+```
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+## Role Management
 
-## Contributing
+### Assigning Roles to New Users
+For default or newly registered users, assign the `panel_user` role.
+Modify the `User` model:
+```php
+class User extends Authenticatable implements FilamentUser {
+    use HasFactory, Notifiable, HasRoles, HasPanelShield;
+}
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### Seeding Users with Default Role
+In your database seeder, assign the `panel_user` role to new users:
+```php
+$panelUserRole = Role::where('name', 'panel_user')->first();
 
-## Code of Conduct
+if (!$panelUserRole) {
+    $panelUserRole = Role::create(['name' => 'panel_user']);
+}
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+$user1 = User::factory()->create([
+    'name' => 'User 1',
+    'email' => 'user1@gmail.com',
+    'password' => bcrypt('@user123'),
+]);
 
-## Security Vulnerabilities
+$user1->assignRole($panelUserRole);
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## Additional Commands
 
-## License
+### Install Shield for a Specific Panel
+```sh
+php artisan shield:install admin
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+### Generate a Super Admin User
+```sh
+php artisan shield:super-admin
+```
+
+### Generate Policies for All Models
+```sh
+php artisan shield:generate --all
+```
+
+## Conclusion
+Filament Shield simplifies role and permission management in Laravel Filament applications. By following this guide, you can easily integrate role-based access control into your Filament-powered project. For more details, refer to the [official documentation](https://github.com/bezhanSalleh/filament-shield).
+

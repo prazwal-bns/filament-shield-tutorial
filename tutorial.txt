@@ -40,7 +40,8 @@ php artisan shield:install admin
 
 
 - for default or newly registerd users a certain role should be assigned for that implement Filament User and use HasPanelShield :
-class User extends Authenticatable implements FilamentUser
+for that User model should look like:
+class User extends Authenticatable implements FilamentUser {
     use HasFactory, Notifiable, HasRoles, HasPanelShield;
 
 
